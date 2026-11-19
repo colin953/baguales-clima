@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Baguales Clima</title>
+<meta name="description" content="Estaciones meteorológicas de Baguales: lecturas, gráficos y datos.">
+<meta name="theme-color" content="#1f4e79">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Baguales Clima">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root { color-scheme: light; --font-anthropic-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --font-anthropic-serif: Georgia, "Times New Roman", serif;
+  --color-fg: #1f2328; --color-fg-muted: #5f6b76; --color-bg: #ffffff; --color-panel: #ffffff; --color-border-line: #e1e4e8;
+  --cds-radius: 10px; --cds-pad-lg: 16px; --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 14px; --cds-gap-lg: 22px;
+  --cds-font-size-title: 28px; --cds-font-size-heading: 18px; --cds-font-size-body: 15px; --cds-font-size-caption: 13px; --cds-font-weight-medium: 600;
+  --cds-text-secondary: #5f6b76; --cds-chart-axis: #c9ced4; --cds-chart-grid: #eef0f2; --cds-chart-reference: #9aa1a9;
+  --cds-surface-popover: #ffffff; --cds-border: #d7dbe0; --cds-shadow-popover: 0 4px 14px rgba(0,0,0,.12); }
+html, body { background: #f6f7f8; color: #1f2328; margin: 0; }
+body { padding: 0 16px 40px; }
+.bx { max-width: 1240px; margin: 0 auto; }
+.dash-skeleton { background: linear-gradient(90deg, #eef0f2, #f6f7f8, #eef0f2); background-size: 200% 100%; animation: bxsk 1.4s infinite; border-radius: 8px; }
+@keyframes bxsk { to { background-position: -200% 0; } }
+@media (max-width: 520px) { body { padding: 0 8px 30px; } }
+
+
+.bc-bar { position: sticky; top: 0; z-index: 5; margin: 0 -16px 18px; padding: calc(env(safe-area-inset-top) + 10px) 16px 0; background: #1f4e79; color: #fff; }
+@media (max-width: 520px) { .bc-bar { margin: 0 -8px 14px; padding-left: 10px; padding-right: 10px; } }
+.bc-row { max-width: 1240px; margin: 0 auto; display: flex; align-items: center; gap: 10px; }
+.bc-row img { width: 30px; height: 30px; border-radius: 7px; }
+.bc-name { font-family: var(--font-anthropic-sans); font-weight: 600; font-size: 18px; letter-spacing: .2px; }
+.bc-menu { max-width: 1240px; margin: 6px auto 0; display: flex; gap: 2px; overflow-x: auto; }
+.bc-item { font: inherit; font-family: var(--font-anthropic-sans); font-size: 14px; color: rgba(255,255,255,.75); background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 12px; cursor: pointer; white-space: nowrap; }
+.bc-item.is-active { color: #fff; border-bottom-color: #fff; font-weight: 600; }
+.bc-item:disabled { cursor: default; opacity: .6; }
+.bc-item small { font-size: 11px; opacity: .85; }
+.bx-warn { color: #a15c00; }
+
+.bx { font-family: var(--font-anthropic-sans); color: var(--color-fg); display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
+.bx [hidden] { display: none !important; }
+.bx-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0 0 var(--cds-gap-xs); }
+.bx-lede { margin: 0; line-height: 1.5; }
+.bx-lede b { font-weight: var(--cds-font-weight-medium); }
+.bx-h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; display: flex; align-items: center; gap: 8px; }
+.bx-h3 { font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); margin: 0 0 2px; display: flex; align-items: center; gap: 6px; }
+.bx-muted { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.bx-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+.bx-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--color-border-line); }
+.bx-tab { font: inherit; font-size: var(--cds-font-size-body); padding: 8px 16px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--color-fg-muted); cursor: pointer; margin-bottom: -1px; }
+.bx-tab.is-active { color: var(--color-fg); border-bottom-color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.bx-page { display: flex; flex-direction: column; gap: var(--cds-gap-md); }
+.bx-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--cds-gap-md); }
+.bx-presets { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); }
+.bx-btn { font: inherit; font-size: var(--cds-font-size-caption); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--color-border-line); background: var(--color-bg); color: var(--color-fg); cursor: pointer; }
+.bx-btn:hover { border-color: var(--color-fg-muted); }
+.bx-btn.is-active { background: var(--color-fg); color: var(--color-bg); border-color: var(--color-fg); }
+.bx-field { display: flex; flex-direction: column; gap: 2px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.bx-input { font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 5px 8px; }
+.bx-note-line { margin: var(--cds-gap-xs) 0 0; }
+.bx-stations { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--cds-gap-lg); }
+@media (min-width: 980px) { .bx-stations { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.bx-station-panel { display: flex; flex-direction: column; gap: var(--cds-gap-sm); min-width: 0; }
+.bx-panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--cds-gap-sm); }
+.bx-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.bx-dot-lm { background: #2a6fb0; }
+.bx-dot-an { background: #d9730d; }
+.bx-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--cds-gap-sm); }
+@media (max-width: 520px) { .bx-grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.bx-tile { padding: 12px; display: flex; flex-direction: column; }
+.bx-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-bottom: 2px; }
+.bx-sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: 4px; line-height: 1.35; }
+.bx-c { text-align: center; }
+.bx-dial, .bx-tbars { color: var(--color-fg); }
+.bx-grid-bottom { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--cds-gap-sm); }
+.bx-frozen { margin: 0; }
+.bx-roses { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--cds-gap-md); }
+@media (min-width: 640px) { .bx-roses { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.bx-rose { position: relative; min-height: 240px; margin-top: var(--cds-gap-xs); }
+.bx-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.bx-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.bx-sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.bx-slider-card { display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
+.bx-slider-card b { font-weight: var(--cds-font-weight-medium); color: var(--color-fg); }
+.bx-slider { width: 100%; accent-color: var(--color-fg); cursor: pointer; }
+.bx-charts { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--cds-gap-md); }
+.bx-chart { position: relative; min-height: 200px; margin-top: var(--cds-gap-xs); }
+.bx svg { display: block; overflow: visible; }
+.bx svg text { fill: var(--cds-text-secondary); font-size: 11px; font-family: var(--font-anthropic-sans); }
+.bx svg text.bx-strong { fill: var(--color-fg); font-size: 12px; font-weight: 600; }
+.bx svg text.bx-faint { fill: #8a9099; }
+.bx svg text.bx-tiny { font-size: 10px; }
+.bx-chart .domain, .bx-chart .tick line { stroke: var(--cds-chart-axis); }
+.bx-grid line { stroke: var(--cds-chart-grid); }
+.bx-grid .domain { display: none; }
+.bx-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); box-shadow: var(--cds-shadow-popover); border-radius: var(--cds-radius); padding: 6px 8px; font-size: var(--cds-font-size-caption); color: var(--color-fg); white-space: nowrap; z-index: 2; font-variant-numeric: tabular-nums; }
+.bx-tip div + div { margin-top: 2px; }
+.bx-tip-h { font-weight: var(--cds-font-weight-medium); }
+.bx-empty { display: flex; align-items: center; justify-content: center; min-height: 120px; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); text-align: center; }
+.bx-scroll { overflow: auto; max-height: 600px; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); }
+.bx-table { border-collapse: collapse; width: 100%; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+.bx-table th { position: sticky; top: 0; background: var(--color-panel); text-align: right; font-weight: var(--cds-font-weight-medium); padding: 6px 10px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.bx-table td { text-align: right; padding: 4px 10px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.bx-table .bx-l { text-align: left; }
+.bx-table td.bx-note { white-space: normal; min-width: 200px; color: var(--color-fg-muted); }
+.bx-more { align-self: flex-start; }
+.bx details summary, #about summary { cursor: pointer; font-weight: var(--cds-font-weight-medium); }
+#about ul { margin: var(--cds-gap-sm) 0 0; padding-left: 1.2em; color: var(--color-fg-muted); line-height: 1.5; }
+.bx-melt-key { display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: #b39ddb; margin-right: 4px; vertical-align: -1px; }
+</style>
+</head>
+<body>
+<div class="bc-bar">
+  <div class="bc-row"><img src="icon-192.png" alt=""><span class="bc-name">Baguales Clima</span></div>
+  <nav class="bc-menu" aria-label="Grupos de estaciones">
+    <button type="button" class="bc-item is-active" aria-current="page">Estaciones altas</button>
+    <button type="button" class="bc-item" disabled>Estaciones bajas <small>(próximamente)</small></button>
+  </nav>
+</div>
+
+
+<div class="bx">
+  <header id="overview">
+    <h1 class="bx-title">Estaciones altas</h1>
+    <p class="bx-lede">La Mesada y Antena. Última lectura: La Mesada <b data-draw="val" data-fmt="time" data-source="latest" data-field="time_local" data-where="station=lm">—</b>, Antena <b data-draw="val" data-fmt="time" data-source="latest" data-field="time_local" data-where="station=an">—</b>. Los rangos rápidos cuentan hacia atrás desde la última lectura.</p>
+    <p class="bx-muted" id="bx-loaded" style="margin:4px 0 0"></p>
+  </header>
+  <div class="bx-card bx-loading">Cargando datos de las estaciones…</div>
+
+  <nav class="bx-tabs" role="tablist" aria-label="Páginas">
+    <button type="button" class="bx-tab is-active" role="tab" aria-selected="true" data-tab="bloques">Bloques</button>
+    <button type="button" class="bx-tab" role="tab" aria-selected="false" data-tab="graficos">Gráficos</button>
+    <button type="button" class="bx-tab" role="tab" aria-selected="false" data-tab="datos">Datos</button>
+  </nav>
+
+  <section id="bloques" class="bx-page">
+    <div class="bx-card bx-filter" id="filtro-b">
+      <div class="bx-controls">
+        <div class="bx-presets" role="group" aria-label="Rango de tiempo">
+          <button type="button" class="bx-btn" data-page="b" data-preset="obscur">Día de obs. actual</button>
+          <button type="button" class="bx-btn" data-page="b" data-preset="obsprev">Día de obs. anterior</button>
+          <button type="button" class="bx-btn" data-page="b" data-preset="24h">24 horas</button>
+          <button type="button" class="bx-btn" data-page="b" data-preset="72h">72 horas</button>
+          <button type="button" class="bx-btn" data-page="b" data-preset="7d">7 días</button>
+          <button type="button" class="bx-btn" data-page="b" data-preset="season">Temporada</button>
+        </div>
+        <label class="bx-field">Inicio<input type="datetime-local" class="bx-input" data-draw="range-input" data-page="b" data-end="from" aria-label="Inicio del rango"></label>
+        <label class="bx-field">Fin<input type="datetime-local" class="bx-input" data-draw="range-input" data-page="b" data-end="to" aria-label="Fin del rango"></label>
+        <button type="button" class="bx-btn bx-apply" data-page="b">Aplicar fechas</button>
+      </div>
+      <p class="bx-muted bx-note-line">Mostrando <span data-draw="val" data-fmt="time" data-source="ranges" data-field="from" data-where="page=b">—</span> a <span data-draw="val" data-fmt="time" data-source="ranges" data-field="to" data-where="page=b">—</span>. El rango se aplica a las tres páginas.</p>
+    </div>
+    <div class="bx-stations">
+      <div class="bx-station-panel" id="bloques-lm">
+        <div class="bx-panel-head">
+          <h2 class="bx-h2"><i class="bx-dot bx-dot-lm"></i>La Mesada</h2>
+          <div class="bx-muted"><span data-draw="val" data-fmt="0" data-source="bstats" data-field="readings" data-where="station=lm">—</span> lecturas en el rango</div>
+        </div>
+        <div class="bx-grid3">
+          <div class="bx-card bx-tile" id="temp-lm">
+            <div class="bx-label">Temperatura</div>
+            <div class="bx-tbars" data-draw="tbars" data-st="lm" data-source="bstats"></div>
+          </div>
+          <div class="bx-card bx-tile" id="viento-lm">
+            <div class="bx-label">Viento, última lectura</div>
+            <div class="bx-dial" data-draw="compass" data-st="lm" data-source="bstats"></div>
+            <div class="bx-sub bx-c">Del <span data-draw="val" data-fmt="text" data-source="bstats" data-field="wind_last_dir" data-where="station=lm">—</span>, ráfaga <span data-draw="val" data-fmt="1" data-source="bstats" data-field="wind_last_gust" data-where="station=lm">—</span> km/h, <span data-draw="val" data-fmt="time" data-source="bstats" data-field="wind_last_time" data-where="station=lm">—</span></div>
+            <div class="bx-sub bx-c">Promedio del rango <span data-draw="val" data-fmt="1" data-source="bstats" data-field="wind_mean" data-where="station=lm">—</span> km/h, predominante del <span data-draw="val" data-fmt="text" data-source="bstats" data-field="prevailing_dir" data-where="station=lm">—</span></div>
+          </div>
+          <div class="bx-card bx-tile" id="rafaga-lm">
+            <div class="bx-label">Ráfaga máxima</div>
+            <div class="bx-dial" data-draw="gustcompass" data-st="lm" data-source="bstats"></div>
+            <div class="bx-sub bx-c">Del <span data-draw="val" data-fmt="text" data-source="bstats" data-field="gust_max_dir" data-where="station=lm">—</span>, <span data-draw="val" data-fmt="time" data-source="bstats" data-field="gust_max_time" data-where="station=lm">—</span></div>
+          </div>
+          <div class="bx-card bx-tile" id="precip-lm">
+            <div class="bx-label">Lluvia</div>
+            <div class="bx-dial" data-draw="onebar" data-st="lm" data-source="bstats"></div>
+            <div class="bx-sub bx-c">Total del rango. <span class="bx-melt-key"></span>Posible nieve derretida: <span data-draw="val" data-fmt="1" data-source="bstats" data-field="melt_mm" data-where="station=lm">—</span> mm</div>
+          </div>
+          <div class="bx-card bx-tile" id="hr-lm">
+            <div class="bx-label">Humedad relativa</div>
+            <div class="bx-dial" data-draw="rhgauge" data-st="lm" data-source="bstats"></div>
+            <div class="bx-sub bx-c">Aguja: última lectura. Rango <span data-draw="val" data-fmt="0" data-source="bstats" data-field="rh_min" data-where="station=lm">—</span> a <span data-draw="val" data-fmt="0" data-source="bstats" data-field="rh_max" data-where="station=lm">—</span> %, media <span data-draw="val" data-fmt="0" data-source="bstats" data-field="rh_mean" data-where="station=lm">—</span> %</div>
+          </div>
+          <div class="bx-card bx-tile" id="solar-lm">
+            <div class="bx-label">Radiación solar</div>
+            <div class="bx-dial" data-draw="solargauge" data-st="lm" data-source="bstats"></div>
+            <div class="bx-sub bx-c">Aguja: última lectura. Máx. <span data-draw="val" data-fmt="0" data-source="bstats" data-field="solar_max" data-where="station=lm">—</span> W/m², <span data-draw="val" data-fmt="time" data-source="bstats" data-field="solar_max_time" data-where="station=lm">—</span></div>
+          </div>
+        </div>
+        <p class="bx-frozen bx-muted" data-st="lm" hidden><span data-draw="val" data-fmt="0" data-source="bstats" data-field="frozen" data-where="station=lm">—</span> lecturas de este rango con posible anemómetro congelado (viento y ráfaga en 0 con temperatura bajo 1 °C y humedad alta). No se cuentan como calma.</p>
+      </div>
+      <div class="bx-station-panel" id="bloques-an">
+        <div class="bx-panel-head">
+          <h2 class="bx-h2"><i class="bx-dot bx-dot-an"></i>Antena</h2>
+          <div class="bx-muted"><span data-draw="val" data-fmt="0" data-source="bstats" data-field="readings" data-where="station=an">—</span> lecturas en el rango</div>
+        </div>
+        <div class="bx-grid3">
+          <div class="bx-card bx-tile" id="temp-an">
+            <div class="bx-label">Temperatura</div>
+            <div class="bx-tbars" data-draw="tbars" data-st="an" data-source="bstats"></div>
+          </div>
+          <div class="bx-card bx-tile" id="viento-an">
+            <div class="bx-label">Viento, última lectura</div>
+            <div class="bx-dial" data-draw="compass" data-st="an" data-source="bstats"></div>
+            <div class="bx-sub bx-c">Del <span data-draw="val" data-fmt="text" data-source="bstats" data-field="wind_last_dir" data-where="station=an">—</span>, ráfaga <span data-draw="val" data-fmt="1" data-source="bstats" data-field="wind_last_gust" data-where="station=an">—</span> km/h, <span data-draw="val" data-fmt="time" data-source="bstats" data-field="wind_last_time" data-where="station=an">—</span></div>
+            <div class="bx-sub bx-c">Promedio del rango <span data-draw="val" data-fmt="1" data-source="bstats" data-field="wind_mean" data-where="station=an">—</span> km/h, predominante del <span data-draw="val" data-fmt="text" data-source="bstats" data-field="prevailing_dir" data-where="station=an">—</span></div>
+          </div>
+          <div class="bx-card bx-tile" id="rafaga-an">
+            <div class="bx-label">Ráfaga máxima</div>
+            <div class="bx-dial" data-draw="gustcompass" data-st="an" data-source="bstats"></div>
+            <div class="bx-sub bx-c">Del <span data-draw="val" data-fmt="text" data-source="bstats" data-field="gust_max_dir" data-where="station=an">—</span>, <span data-draw="val" data-fmt="time" data-source="bstats" data-field="gust_max_time" data-where="station=an">—</span></div>
+          </div>
+          <div class="bx-card bx-tile" id="precip-an">
+            <div class="bx-label">Lluvia</div>
+            <div class="bx-dial" data-draw="onebar" data-st="an" data-source="bstats"></div>
+            <div class="bx-sub bx-c">Total del rango. <span class="bx-melt-key"></span>Posible nieve derretida: <span data-draw="val" data-fmt="1" data-source="bstats" data-field="melt_mm" data-where="station=an">—</span> mm</div>
+          </div>
+          <div class="bx-card bx-tile" id="hr-an">
+            <div class="bx-label">Humedad relativa</div>
+            <div class="bx-dial" data-draw="rhgauge" data-st="an" data-source="bstats"></div>
+            <div class="bx-sub bx-c">Aguja: última lectura. Rango <span data-draw="val" data-fmt="0" data-source="bstats" data-field="rh_min" data-where="station=an">—</span> a <span data-draw="val" data-fmt="0" data-source="bstats" data-field="rh_max" data-where="station=an">—</span> %, media <span data-draw="val" data-fmt="0" data-source="bstats" data-field="rh_mean" data-where="station=an">—</span> %</div>
+          </div>
+          <div class="bx-card bx-tile" id="solar-an">
+            <div class="bx-label">Radiación solar</div>
+            <div class="bx-dial" data-draw="solargauge" data-st="an" data-source="bstats"></div>
+            <div class="bx-sub bx-c">Aguja: última lectura. Máx. <span data-draw="val" data-fmt="0" data-source="bstats" data-field="solar_max" data-where="station=an">—</span> W/m², <span data-draw="val" data-fmt="time" data-source="bstats" data-field="solar_max_time" data-where="station=an">—</span></div>
+          </div>
+        </div>
+        <p class="bx-frozen bx-muted" data-st="an" hidden><span data-draw="val" data-fmt="0" data-source="bstats" data-field="frozen" data-where="station=an">—</span> lecturas de este rango con posible anemómetro congelado (viento y ráfaga en 0 con temperatura bajo 1 °C y humedad alta). No se cuentan como calma.</p>
+      </div>
+    </div>
+    <div class="bx-grid-bottom">
+      <div class="bx-card bx-tile" id="presion">
+        <div class="bx-label">Presión, común a ambas estaciones</div>
+        <div class="bx-dial" data-draw="baro" data-source="bstats"></div>
+        <div class="bx-sub bx-c">Aguja: última lectura. Rango <span data-draw="val" data-fmt="1" data-source="bstats" data-field="pressure_min" data-where="station=lm">—</span> a <span data-draw="val" data-fmt="1" data-source="bstats" data-field="pressure_max" data-where="station=lm">—</span> mb, cambio <span data-draw="val" data-fmt="signed" data-source="bstats" data-field="pressure_change" data-where="station=lm">—</span> mb</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="graficos" class="bx-page" hidden>
+    <div class="bx-card bx-filter" id="filtro-g">
+      <div class="bx-controls">
+        <div class="bx-presets" role="group" aria-label="Rango de tiempo">
+          <button type="button" class="bx-btn" data-page="g" data-preset="obscur">Día de obs. actual</button>
+          <button type="button" class="bx-btn" data-page="g" data-preset="obsprev">Día de obs. anterior</button>
+          <button type="button" class="bx-btn" data-page="g" data-preset="24h">24 horas</button>
+          <button type="button" class="bx-btn" data-page="g" data-preset="72h">72 horas</button>
+          <button type="button" class="bx-btn" data-page="g" data-preset="7d">7 días</button>
+          <button type="button" class="bx-btn" data-page="g" data-preset="season">Temporada</button>
+        </div>
+        <label class="bx-field">Inicio<input type="datetime-local" class="bx-input" data-draw="range-input" data-page="g" data-end="from" aria-label="Inicio del rango"></label>
+        <label class="bx-field">Fin<input type="datetime-local" class="bx-input" data-draw="range-input" data-page="g" data-end="to" aria-label="Fin del rango"></label>
+        <button type="button" class="bx-btn bx-apply" data-page="g">Aplicar fechas</button>
+      </div>
+      <p class="bx-muted bx-note-line">Mostrando <span data-draw="val" data-fmt="time" data-source="ranges" data-field="from" data-where="page=g">—</span> a <span data-draw="val" data-fmt="time" data-source="ranges" data-field="to" data-where="page=g">—</span>. El rango se aplica a las tres páginas.</p>
+    </div>
+    <div class="bx-roses">
+      <div class="bx-card" id="rosa-lm">
+        <h3 class="bx-h3"><i class="bx-dot bx-dot-lm"></i>Rosa de vientos, La Mesada</h3>
+        <div class="bx-muted">Calma <span data-draw="val" data-fmt="0" data-source="rose_stats" data-field="calm_pct" data-where="station=lm">—</span> %</div>
+        <div class="bx-rose" data-draw="rose" data-st="lm" data-source="roses"></div>
+      </div>
+      <div class="bx-card" id="rosa-an">
+        <h3 class="bx-h3"><i class="bx-dot bx-dot-an"></i>Rosa de vientos, Antena</h3>
+        <div class="bx-muted">Calma <span data-draw="val" data-fmt="0" data-source="rose_stats" data-field="calm_pct" data-where="station=an">—</span> %</div>
+        <div class="bx-rose" data-draw="rose" data-st="an" data-source="roses"></div>
+      </div>
+    </div>
+    <div class="bx-legend" aria-label="Rangos de velocidad del viento">
+      <span><i class="bx-sw" data-i="0"></i>1–25 km/h</span><span><i class="bx-sw" data-i="1"></i>26–40 km/h</span><span><i class="bx-sw" data-i="2"></i>41–60 km/h</span><span><i class="bx-sw" data-i="3"></i>60+ km/h</span>
+      <span>Las rosas cubren todo el rango de esta página y usan la misma escala.</span>
+    </div>
+    <div class="bx-card bx-slider-card" id="ventana">
+      <div class="bx-muted">Los gráficos de líneas muestran 12 horas: <b data-draw="val" data-fmt="time" data-source="gwindow" data-field="from" data-row="0">—</b> a <b data-draw="val" data-fmt="time" data-source="gwindow" data-field="to" data-row="0">—</b>. Deslice para recorrer el rango.</div>
+      <input type="range" class="bx-slider" data-draw="win-slider" min="0" max="0" step="1" value="0" aria-label="Mover la ventana de 12 horas dentro del rango">
+    </div>
+    <div class="bx-charts">
+      <div class="bx-card" id="g-temp"><h3 class="bx-h3">Temperatura (°C)</h3><div class="bx-chart" data-draw="chart" data-chart="temp" data-source="grows"></div></div>
+      <div class="bx-card" id="g-viento-lm"><h3 class="bx-h3"><i class="bx-dot bx-dot-lm"></i>Viento, La Mesada (km/h)</h3><div class="bx-muted">Las flechas apuntan hacia donde sopla el viento; los puntos rojos son ráfagas.</div><div class="bx-chart" data-draw="chart" data-chart="wind" data-st="lm" data-source="grows"></div></div>
+      <div class="bx-card" id="g-viento-an"><h3 class="bx-h3"><i class="bx-dot bx-dot-an"></i>Viento, Antena (km/h)</h3><div class="bx-muted">Las flechas apuntan hacia donde sopla el viento; los puntos rojos son ráfagas.</div><div class="bx-chart" data-draw="chart" data-chart="wind" data-st="an" data-source="grows"></div></div>
+      <div class="bx-card" id="g-precip"><h3 class="bx-h3">Lluvia por día de observación (mm)</h3><div class="bx-muted">Todo el rango de esta página; cada día va de 08:00 a 07:59.</div><div class="bx-chart" data-draw="pbars" data-source="gprecip"></div></div>
+      <div class="bx-card" id="g-hr"><h3 class="bx-h3">Humedad relativa (%)</h3><div class="bx-chart" data-draw="chart" data-chart="rh" data-source="grows"></div></div>
+      <div class="bx-card" id="g-solar"><h3 class="bx-h3">Radiación solar (W/m²)</h3><div class="bx-chart" data-draw="chart" data-chart="solar" data-source="grows"></div></div>
+      <div class="bx-card" id="g-presion"><h3 class="bx-h3">Presión (mb)</h3><div class="bx-chart" data-draw="chart" data-chart="pressure" data-source="grows"></div></div>
+    </div>
+  </section>
+
+  <section id="datos" class="bx-page" hidden>
+    <div class="bx-card bx-filter" id="filtro-d">
+      <div class="bx-controls">
+        <div class="bx-presets" role="group" aria-label="Rango de tiempo">
+          <button type="button" class="bx-btn" data-page="d" data-preset="obscur">Día de obs. actual</button>
+          <button type="button" class="bx-btn" data-page="d" data-preset="obsprev">Día de obs. anterior</button>
+          <button type="button" class="bx-btn" data-page="d" data-preset="24h">24 horas</button>
+          <button type="button" class="bx-btn" data-page="d" data-preset="72h">72 horas</button>
+          <button type="button" class="bx-btn" data-page="d" data-preset="7d">7 días</button>
+          <button type="button" class="bx-btn" data-page="d" data-preset="season">Temporada</button>
+        </div>
+        <label class="bx-field">Inicio<input type="datetime-local" class="bx-input" data-draw="range-input" data-page="d" data-end="from" aria-label="Inicio del rango"></label>
+        <label class="bx-field">Fin<input type="datetime-local" class="bx-input" data-draw="range-input" data-page="d" data-end="to" aria-label="Fin del rango"></label>
+        <button type="button" class="bx-btn bx-apply" data-page="d">Aplicar fechas</button>
+        <label class="bx-field">Estación<select class="bx-input bx-station" aria-label="Estación"><option value="both">Ambas</option><option value="lm">La Mesada</option><option value="an">Antena</option></select></label>
+        <button type="button" class="bx-btn bx-csv">Descargar CSV</button>
+      </div>
+      <p class="bx-muted bx-note-line">Mostrando <span data-draw="val" data-fmt="time" data-source="ranges" data-field="from" data-where="page=d">—</span> a <span data-draw="val" data-fmt="time" data-source="ranges" data-field="to" data-where="page=d">—</span>. El rango se aplica a las tres páginas.</p>
+    </div>
+    <div class="bx-scroll" id="tabla">
+      <table class="bx-table" data-source="dsel" data-row-key="time_local">
+        <thead><tr>
+          <th data-field="time_local" class="bx-l">Hora</th><th data-field="station" class="bx-l">Estación</th><th data-field="temp_c">Temp. °C</th><th data-field="dew_point_c">Punto de rocío °C</th><th data-field="rh_pct">HR %</th><th data-field="wind_avg_kmh">Viento km/h</th><th data-field="wind_gust_kmh">Ráfaga km/h</th><th data-field="dir_compass">Dir.</th><th data-field="precip_mm">Lluvia mm</th><th data-field="melt_mm">Posible nieve derretida* mm</th><th data-field="solar_wm2">Rad. solar W/m²</th><th data-field="pressure_hpa">Presión mb</th><th data-field="note" class="bx-l">Nota</th>
+        </tr></thead>
+        <tbody data-draw="table-body"></tbody>
+      </table>
+    </div>
+    <p class="bx-muted" style="margin:0">* Lluvia registrada con humedad bajo 80 % o temperatura de −2 °C o menos: probablemente nieve derretida en el pluviómetro, no lluvia.</p>
+    <button type="button" class="bx-btn bx-more" hidden>Mostrar 300 filas más</button>
+  </section>
+
+  <details id="about">
+    <summary>Acerca de estos datos</summary>
+    <ul>
+      <li>Ambas estaciones son Davis Vantage Pro2 inalámbricas que transmiten a una WeatherLink Live: La Mesada es el transmisor 3 y Antena el transmisor 1. Las lecturas están en la planilla "Baguales Weather Station Data", una pestaña por estación, en registros cada 15 minutos descargados del historial de WeatherLink (agosto 2024 a octubre 2026).</li>
+      <li>La presión viene del barómetro de la WeatherLink Live, así que es la misma para ambas estaciones. Está reducida al nivel del mar.</li>
+      <li>El día de observación va de 08:00 a 07:59. Los rangos rápidos cuentan hacia atrás desde la última lectura de cualquiera de las dos estaciones, así que siguen mostrando datos mientras las estaciones están fuera de línea. "Temporada" empieza el 1 de mayo del año de la última lectura.</li>
+      <li>Los valores imposibles quedan en blanco (por ejemplo una ráfaga de 372 km/h en Antena el 15 ago 2025, o radiación solar sobre 1.400 W/m²). Cuando el viento y la ráfaga marcan 0 durante una hora o más con temperatura bajo 1 °C y humedad de 90 % o más, se marca como posible anemómetro congelado y no se cuenta como calma.</li>
+      <li>El pluviómetro Davis no es calefaccionado: la nieve se registra con atraso, cuando se derrite. Todo lo que registra se muestra como lluvia, salvo cuando la humedad está bajo 80 % o la temperatura en −2 °C o menos: eso se marca en tono claro como posible nieve derretida en el embudo.</li>
+      <li>Los controles de rango están en cada página, pero el rango es uno solo: lo que se elige en Bloques, Gráficos o Datos se aplica a las tres páginas y a ambas estaciones.</li>
+    </ul>
+  </details>
+</div>
+
+<script src="d3.min.js"></script>
+<script src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch((e) => console.warn('Service worker', e)));
+</script>
+</body>
+</html>
